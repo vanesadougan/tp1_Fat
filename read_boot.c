@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define PARTITIONTABLEOFFSET 446
+#define START_FIRST_PARTITION_TABLE 446
 
 typedef struct {
     unsigned char first_byte;
@@ -29,7 +29,7 @@ typedef struct {
     char bios_int;
     char not_used;
     char ext_boot;
-    unsigned int volume_id;// O 4 CHAR??
+    unsigned int volume_id;
     char volume_label[11];
     char fs_type[8]; // Type en ascii
     char boot_code[448];
@@ -41,18 +41,17 @@ int main() {
     int i;
     PartitionTable pt[4];
     Fat12BootSector bs;
-
-    fseek(in, PARTITIONTABLEOFFSET , SEEK_SET); // Ir al inicio de la tabla de particiones. Completar ...
-    fread(pt, sizeof(PartitionTable), 4, in); // leo entradas
+    // Ir al inicio de la tabla de particiones.
+    fseek(in, START_FIRST_PARTITION_TABLE , SEEK_SET);  
+    fread(pt, sizeof(PartitionTable), 4, in);
 
     for(i=0; i<4; i++) {
-        printf("Partiion type: %d\n", pt[i].partition_type);
+        printf("Partition type: %d\n", pt[i].partition_type);
         if(pt[i].partition_type == 1) {
             printf("Encontrado FAT12 %d\n", i);
             break;
         }
     }
-
     if(i == 4) {
         printf("No se encontró filesystem FAT12, saliendo ...\n");
         return -1;

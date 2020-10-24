@@ -14,14 +14,14 @@ typedef struct {
 typedef struct {
     unsigned char jmp[3];
     char oem[8];
-    unsigned short sector_size;
+    unsigned short bytes_per_sector; //Mapeo de 1 cluster ->  tamanio unidad logica del disco
     char clusterSectors;
     unsigned short reserved_sectors;
     char q_of_fats;
-    unsigned short root_directory_entries;
+    unsigned short max_root_dir_entries;
     char number_of_sector[2];
     char media_type;
-    unsigned short fat_size_sectors;
+    unsigned short fat_size_sectors; //Cantidad de sectores en un fat
     char sectors_per_track[2];
     char number_of_heads[2];
     char sectors_b4_start[4];
@@ -32,14 +32,25 @@ typedef struct {
     unsigned int volume_id;
     char volume_label[11];
     char fs_type[8];
-    char boot_code[448]
+    char boot_code[448];
     unsigned short boot_sector_signature;
 } __attribute((packed)) Fat12BootSector;
 
 typedef struct {
-	// {...} COMPLETAR que va aca?
+	unsigned char filename[8];         //8
+    unsigned char extension[3];        //11
+    unsigned char attributes;          //12
+    unsigned char reserved;            //13
+    unsigned char create_time[3];      //16
+    unsigned char create_date[2];      //18
+    unsigned char last_access_date[2]; //20
+    unsigned short first_cluster_msb;  //22
+    unsigned char last_mod_time[2];    //24
+    unsigned char last_mod_date[2];    //26
+    unsigned short first_cluster_lsb;  //28
+    unsigned int file_size;            //32
 } __attribute((packed)) Fat12Entry;
-
+/*
 void print_file_info(Fat12Entry *entry, int file_pos, int data_area, int cluster_size) {
     switch(entry->filename[0]) {
     case 0x00:
@@ -58,6 +69,32 @@ void print_file_info(Fat12Entry *entry, int file_pos, int data_area, int cluster
     }
 
 }
+*/
+
+void print_file_info(Fat12Entry *entry) {
+    switch(entry->filename[0]) {
+    case 0x00:
+        return; // unused entry
+    case 0XE5: // Completar los ...
+        printf("Archivo borrado: [?%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
+        return;
+    //case : // Completar los ...
+        //printf("Archivo que comienza con 0xE5: [%c%.8s.%.3s]\n", 0xE5,/////entry->filename, entry->extension); 
+        //break;
+    default:
+        if (entry->attributes == 0x10){
+            printf("Directorio: [%.8s.%.3s][%d]\n", entry->filename, entry->extension); // COMPLETAR
+            return;
+        }
+        else if (entry->attributes == 0x20){
+            printf("Archivo: [%.8s.%.3s][%d]\n", entry->filename, entry->extension); // COMPLETAR
+        }
+    }
+}
+         // Completar los ...
+        //printf("Directorio: [%.8s.%.3s]\n", // COMPLETAR 
+        //break;
+    //default:
 
 int main() {
     FILE * in = fopen("test.img", "rb");
@@ -84,13 +121,13 @@ int main() {
     fread(&bs, sizeof(Fat12BootSector), 1, in);
 
     printf("En  0x%X, sector size %d, FAT size %d sectors, %d FATs\n\n",
-           ftell(in), bs.sector_size, bs.fat_size_sectors, bs.number_of_fats);
+           ftell(in), bs.bytes_per_sector, bs.fat_size_sectors, bs.q_of_fats);
 
-    fseek(in, (bs.reserved_sectors-1 + bs.fat_size_sectors * bs.number_of_fats) *
-          bs.sector_size, SEEK_CUR);
+    fseek(in, (bs.reserved_sectors-1 + bs.fat_size_sectors * bs.q_of_fats) *
+          bs.bytes_per_sector, SEEK_CUR);
 
-    printf("Root dir_entries %d \n", bs.root_dir_entries);
-    for(i=0; i<bs.root_dir_entries; i++) {
+    printf("Root dir_entries %d \n", bs.max_root_dir_entries);
+    for(i=0; i<bs.max_root_dir_entries; i++) {
         fread(&entry, sizeof(entry), 1, in);
         print_file_info(&entry);
     }
