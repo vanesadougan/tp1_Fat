@@ -75,19 +75,23 @@ void print_file_info(Fat12Entry *entry) {
     switch(entry->filename[0]) {
     case 0x00:
         return; // unused entry
-    case 0XE5: // Completar los ...
+    case 0x05:                                                                                        // Completar los ...
         printf("Archivo borrado: [?%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
+        return;
+ 
+    case 0XE5: // Completar los ...
+        printf("Archivo que comienza con OxE5: [?%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
         return;
     //case : // Completar los ...
         //printf("Archivo que comienza con 0xE5: [%c%.8s.%.3s]\n", 0xE5,/////entry->filename, entry->extension); 
         //break;
     default:
         if (entry->attributes == 0x10){
-            printf("Directorio: [%.8s.%.3s][%d]\n", entry->filename, entry->extension); // COMPLETAR
+            printf("Directorio: [%.8s.%.3s]\n", entry->filename, entry->extension, entry->file_size); // COMPLETAR
             return;
         }
         else if (entry->attributes == 0x20){
-            printf("Archivo: [%.8s.%.3s][%d]\n", entry->filename, entry->extension); // COMPLETAR
+            printf("Archivo: [%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
         }
     }
 }

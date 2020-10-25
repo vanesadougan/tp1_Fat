@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define PARTITIONTABLEOFFSET 446
+#define FAT_1 512
+#define CLUSTER_ADDRESS_START 2
 
 typedef struct {
     unsigned char first_byte;
@@ -71,27 +73,39 @@ void print_file_info(Fat12Entry *entry, int file_pos, int data_area, int cluster
 }
 */
 
-void recover_file(Fat12Entry *entry, int file_position){
-    // modifico el primer caracter para que el archivo deje de aparecer como borrado
-    printf("Entre al recover");
-    printf("Size del fat12entry %d", sizeof(Fat12Entry));
-    entry->filename[0] = "R";
-    FILE *file = fopen("test.img", "r+");
-    fseek(file, file_position - sizeof(Fat12Entry), SEEK_SET);
-    int position = ftell(file);
-    printf("position %d\n", position);
-    fwrite(entry, sizeof(Fat12Entry), 1, file);
+void print_file_content(Fat12Entry *entry, int data_area, int cluster_size){
+    if (entry->first_cluster_msb > 0 || entry->file_size <= 0){
+        return;
+    }
+    int size = entry->file_size - 1;
+    printf("\tfile_size: [%d]\n", size);
+    char *content;
+    content = (char *)malloc(sizeof(char) * size);
+
+    int content_dir = data_area + ((entry->first_cluster_lsb - CLUSTER_ADDRESS_START) * cluster_size);
+    printf("\tcontent_dir: [%d]\n", content_dir);
+    // leemos nuevamente el archivo pero hacemos el seek a la direccion del contenido
+    FILE *file = fopen("test.img", "rb");
+    fseek(file, content_dir, SEEK_SET);
+    fread(content, 1, size, file);
+    //printf("\tcluster: [%d]\n", entry->first_cluster_lsb);
+    printf("\tContenido del archivo: [%.*s]\n", size, content);
     fclose(file);
-    printf("Archivo recuperado %s\n", entry->filename);
+    free(content);
 }
 
-void print_file_info(Fat12Entry *entry, int file_position) {
+void print_file_info(Fat12Entry *entry, int data_area, int cluster_size) {
     switch(entry->filename[0]) {
     case 0x00:
         return; // unused entry
-    case 0XE5: // Completar los ...
+    case 0x05:                                                                                        // Completar los ...
         printf("Archivo borrado: [?%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
-        recover_file(entry, file_position);
+        print_file_content(entry, data_area, cluster_size);
+        return;
+ 
+    case 0XE5: // Completar los ...
+        printf("Archivo que comienza con OxE5: [?%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
+        print_file_content(entry, data_area, cluster_size);
         return;
     //case : // Completar los ...
         //printf("Archivo que comienza con 0xE5: [%c%.8s.%.3s]\n", 0xE5,/////entry->filename, entry->extension); 
@@ -103,6 +117,7 @@ void print_file_info(Fat12Entry *entry, int file_position) {
         }
         else if (entry->attributes == 0x20){
             printf("Archivo: [%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
+            print_file_content(entry, data_area, cluster_size);
         }
     }
 }
@@ -141,10 +156,13 @@ int main() {
     fseek(in, (bs.reserved_sectors-1 + bs.fat_size_sectors * bs.q_of_fats) *
           bs.bytes_per_sector, SEEK_CUR);
 
+    int cluster_size = bs.bytes_per_sector * bs.clusterSectors;
+    int data_area = ftell(in) + bs.max_root_dir_entries * sizeof(Fat12Entry);
+
     printf("Root dir_entries %d \n", bs.max_root_dir_entries);
     for(i=0; i<bs.max_root_dir_entries; i++) {
         fread(&entry, sizeof(entry), 1, in);
-        print_file_info(&entry, ftell(in));
+        print_file_info(&entry, data_area, cluster_size);
     }
 
     printf("\nLeido Root directory, ahora en 0x%X\n", ftell(in));
