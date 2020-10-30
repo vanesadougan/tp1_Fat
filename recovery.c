@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define PARTITIONTABLEOFFSET 446
+#define START_FIRST_PARTITION_TABLE 446
 
 typedef struct {
     unsigned char first_byte;
@@ -37,45 +37,25 @@ typedef struct {
 } __attribute((packed)) Fat12BootSector;
 
 typedef struct {
-	unsigned char filename[8];         //8
-    unsigned char extension[3];        //11
-    unsigned char attributes;          //12
-    unsigned char reserved;            //13
-    unsigned char create_time[3];      //16
-    unsigned char create_date[2];      //18
-    unsigned char last_access_date[2]; //20
-    unsigned short first_cluster_msb;  //22
-    unsigned char last_mod_time[2];    //24
-    unsigned char last_mod_date[2];    //26
-    unsigned short first_cluster_lsb;  //28
-    unsigned int file_size;            //32
+	unsigned char filename[8];             
+    unsigned char extension[3];        
+    unsigned char attributes;          
+    unsigned char reserved;            
+    unsigned char create_time[3];      
+    unsigned char create_date[2];      
+    unsigned char last_access_date[2]; 
+    unsigned short first_cluster_msb;  
+    unsigned char last_mod_time[2];    
+    unsigned char last_mod_date[2];    
+    unsigned short first_cluster_lsb;  
+    unsigned int file_size;            
 } __attribute((packed)) Fat12Entry;
-/*
-void print_file_info(Fat12Entry *entry, int file_pos, int data_area, int cluster_size) {
-    switch(entry->filename[0]) {
-    case 0x00:
-        return; // unused entry
-    case 0x05: // Completar los ...
-        printf("Archivo borrado: [?%.7s.%.3s]\n", entry->filename, entry->extension, file_pos); // COMPLETAR
-        return;
-    case 0xE5: // Completar los ...
-        printf("Archivo que comienza con 0xE5: [%c%.7s.%.3s]\n", 0xE5, entry->filename, entry->extension, file_pos); // COMPLETAR
-        break;
-    case 0x10: // Completar los ...
-        printf("Directorio: [%.8s.%.3s]\n", // COMPLETAR
-        break;
-    default:
-        printf("Archivo: [%.8s.%.3s]\n", entry->filename, entry->extension, file_pos); // COMPLETAR
-    }
-
-}
-*/
 
 void recover_file(Fat12Entry *entry, int file_position){
-    // modifico el primer caracter para que el archivo deje de aparecer como borrado
+    //Reemplazo por 'A' (o cualquier letra) para que deje ver el archivo como si estuvise borrado
     printf("Entre al recover");
     printf("Size del fat12entry %d", sizeof(Fat12Entry));
-    entry->filename[0] = "R";
+    entry->filename[0] = "A";
     FILE *file = fopen("test.img", "r+");
     fseek(file, file_position - sizeof(Fat12Entry), SEEK_SET);
     int position = ftell(file);
@@ -88,28 +68,23 @@ void recover_file(Fat12Entry *entry, int file_position){
 void print_file_info(Fat12Entry *entry, int file_position) {
     switch(entry->filename[0]) {
     case 0x00:
-        return; // unused entry
-    case 0XE5: // Completar los ...
-        printf("Archivo borrado: [?%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
+        return;
+    //Solo se recueran los archivos que comienzan 0xE5
+    //Como aclaramos en los otros files, un archivo 0x05 tambien esta borrado. Pero esta en una lista de archivos por borrar 
+    case 0XE5: 
+        printf("Archivo borrado: [?%.8s.%.3s]\n", entry->filename, entry->extension);
         recover_file(entry, file_position);
         return;
-    //case : // Completar los ...
-        //printf("Archivo que comienza con 0xE5: [%c%.8s.%.3s]\n", 0xE5,/////entry->filename, entry->extension); 
-        //break;
     default:
         if (entry->attributes == 0x10){
-            printf("Directorio: [%.8s.%.3s]\n", entry->filename, entry->extension, entry->file_size); // COMPLETAR
+            printf("Directorio: [%.8s.%.3s]\n", entry->filename, entry->extension, entry->file_size); 
             return;
         }
         else if (entry->attributes == 0x20){
-            printf("Archivo: [%.8s.%.3s]\n", entry->filename, entry->extension); // COMPLETAR
+            printf("Archivo: [%.8s.%.3s]\n", entry->filename, entry->extension); 
         }
     }
 }
-         // Completar los ...
-        //printf("Directorio: [%.8s.%.3s]\n", // COMPLETAR 
-        //break;
-    //default:
 
 int main() {
     FILE * in = fopen("test.img", "rb");
@@ -118,7 +93,7 @@ int main() {
     Fat12BootSector bs;
     Fat12Entry entry;
 
-    fseek(in, PARTITIONTABLEOFFSET, SEEK_SET);
+    fseek(in, START_FIRST_PARTITION_TABLE, SEEK_SET);
     fread(pt, sizeof(PartitionTable), 4, in);
     for(i=0; i<4; i++) {
         if(pt[i].partition_type == 1) {

@@ -11,6 +11,6 @@ Asegurese montar/desmontar el fs 'test.img' cada vez que genere/borre archvos, y
 - Moverse al directorio del proyecto ***cd tp1_Fat/*** 
 - Ejecutar ***make all***
 - Leer MBR -> ***./read_boot*** 
-- Leer FileEntries del root directory ***./read_root*** 
+- Leer FileEntries del root directory ->***./read_root*** 
 - Leer el contenido de las FileEntries del root directory -> ***./print_file***
 - Recuperar archivos borrados -> ***./recovery*** 

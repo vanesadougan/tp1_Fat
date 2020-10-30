@@ -14,7 +14,7 @@ typedef struct {
 typedef struct {
     unsigned char jmp[3];
     char oem[8];
-    unsigned short sector_size; // 2 bytes
+    unsigned short sector_size; 
     char clusterSectors;
     unsigned short reserved_sectors;
     char q_of_fats;
@@ -31,7 +31,7 @@ typedef struct {
     char ext_boot;
     unsigned int volume_id;
     char volume_label[11];
-    char fs_type[8]; // Type en ascii
+    char fs_type[8]; 
     char boot_code[448];
     unsigned short boot_sector_signature;
 } __attribute((packed)) Fat12BootSector;
@@ -41,7 +41,7 @@ int main() {
     int i;
     PartitionTable pt[4];
     Fat12BootSector bs;
-    // Ir al inicio de la tabla de particiones.
+    // El byte 446 es el inicio de la primera tabla de particiones
     fseek(in, START_FIRST_PARTITION_TABLE , SEEK_SET);  
     fread(pt, sizeof(PartitionTable), 4, in);
 
@@ -63,12 +63,10 @@ int main() {
     printf("  Jump code: %02X:%02X:%02X\n", bs.jmp[0], bs.jmp[1], bs.jmp[2]);
     printf("  OEM code: [%.8s]\n", bs.oem);
     printf("  sector_size: %d\n", bs.sector_size);
-//Agregado:
-   printf("  Fat Size Sectors: %d\n", bs.fat_size_sectors);
-   printf("  Quantity of FATs: %d\n", bs.q_of_fats);
-   printf("  Reserved Sectors: %d\n", bs.reserved_sectors);
-   printf("  Root Directory Entries: %d\n", bs.root_directory_entries);
-//Fin
+    printf("  Fat Size Sectors: %d\n", bs.fat_size_sectors);
+    printf("  Quantity of FATs: %d\n", bs.q_of_fats);
+    printf("  Reserved Sectors: %d\n", bs.reserved_sectors);
+    printf("  Root Directory Entries: %d\n", bs.root_directory_entries);
     printf("  volume_id: 0x%08X\n", bs.volume_id);
     printf("  Volume label: [%.11s]\n", bs.volume_label);
     printf("  Filesystem type: [%.8s]\n", bs.fs_type);
