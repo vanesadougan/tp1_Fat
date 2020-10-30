@@ -1,0 +1,4 @@
+.print_file
+.read_mbr
+.read_root
+.recovery
